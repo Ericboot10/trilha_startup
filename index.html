@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Startup School — The Founder's Journey</title>
+  <meta name="description" content="Uma jornada gamificada de empreendedorismo para universitários, inspirada nos conteúdos públicos da Y Combinator. 20 aulas, uma travessia.">
+  <meta name="theme-color" content="#090909">
+  <script>
+    (function () {
+      var d = document.documentElement;
+      d.classList.add('js');
+      try {
+        var t = localStorage.getItem('ss-theme');
+        if (t === 'light' || t === 'dark') d.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <script src="assets/js/data.js" defer></script>
+  <script src="assets/js/gamification.js" defer></script>
+  <script src="assets/js/bridge.js" defer></script>
+  <script src="assets/js/main.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+  <!-- ============ NAVEGAÇÃO ============ -->
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a class="logo" href="#top" aria-label="Startup School — início">
+        <svg class="logo__mark" viewBox="0 0 28 16" aria-hidden="true">
+          <path d="M1 12h26M7 2v13M21 2v13M7 2.5C10 9 18 9 21 2.5M1 9.5C3.5 9 5.5 6 7 2.5M21 2.5c1.5 3.5 3.5 6.5 6 7" fill="none" stroke="currentColor" stroke-width="1.3"/>
+        </svg>
+        <span>STARTUP SCHOOL</span>
+      </a>
+      <nav class="nav__links" aria-label="Principal">
+        <a href="#travessia">A jornada</a>
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#progresso">Conquistas</a>
+        <button type="button" class="nav__link-btn" data-open-login>Entrar</button>
+      </nav>
+      <div class="nav__actions">
+        <button type="button" class="icon-btn" data-theme-toggle aria-label="Alternar tema">
+          <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+        </button>
+        <button type="button" class="btn btn--primary btn--sm nav__cta" data-start>Começar</button>
+        <button type="button" class="icon-btn menu-btn" aria-expanded="false" aria-controls="mobile-menu" aria-label="Abrir menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="mobile-menu" id="mobile-menu" hidden>
+      <a href="#travessia">A jornada</a>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#progresso">Conquistas</a>
+      <button type="button" data-open-login>Entrar</button>
+      <button type="button" class="btn btn--primary btn--lg" data-start>Começar minha jornada <span class="arrow" aria-hidden="true">→</span></button>
+    </div>
+  </header>
+
+  <main id="conteudo">
+
+    <!-- ============ 01 · HERO ============ -->
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <canvas class="hero__canvas" aria-hidden="true"></canvas>
+      <div class="fog fog--a" aria-hidden="true"></div>
+      <div class="fog fog--b" aria-hidden="true"></div>
+      <div class="hero__scrim" aria-hidden="true"></div>
+      <div class="hero__annot mono" aria-hidden="true"><span>TORRE SUL</span><span>227 M · 1937</span></div>
+
+      <div class="hero__content">
+        <p class="eyebrow" data-intro style="--d:350">Uma jornada para futuros fundadores</p>
+        <h1 class="hero__title" id="hero-title" lang="en" data-intro style="--d:500">
+          <span>Make something</span>
+          <span>people want<em>.</em></span>
+        </h1>
+        <p class="hero__sub" data-intro style="--d:750">Aprenda com os ensinamentos da Y Combinator e transforme conhecimento em projetos reais.</p>
+        <p class="hero__meta mono" data-intro style="--d:900">20 aulas <i>·</i> uma jornada <i>·</i> infinitas possibilidades</p>
+        <div class="hero__ctas" data-intro style="--d:1150">
+          <button type="button" class="btn btn--primary btn--lg" data-start>Começar minha jornada <span class="arrow" aria-hidden="true">→</span></button>
+          <a class="btn btn--ghost btn--lg" href="#travessia">Explorar a trilha</a>
+        </div>
+      </div>
+
+      <a class="hero__scroll mono" href="#travessia" data-intro style="--d:1500">Role para explorar <span aria-hidden="true">↓</span></a>
+      <p class="hero__coords mono" data-intro style="--d:1500">San Francisco, California<br>37.8199° N / 122.4783° W</p>
+    </section>
+
+    <!-- ============ 02 · A TRAVESSIA ============ -->
+    <section class="crossing" id="travessia" aria-labelledby="crossing-title">
+      <div class="crossing__sticky">
+        <canvas class="crossing__canvas" aria-hidden="true"></canvas>
+        <div class="crossing__fog crossing__fog--a" aria-hidden="true"></div>
+        <div class="crossing__fog crossing__fog--b" aria-hidden="true"></div>
+        <div class="crossing__head">
+          <p class="eyebrow">02 — A travessia</p>
+          <h2 id="crossing-title">Toda grande empresa começou com um primeiro passo.</h2>
+          <p>Você não precisa ter uma startup. Precisa começar a construir.</p>
+        </div>
+
+        <p class="crossing__fogline">Você não precisa enxergar o caminho inteiro para começar.</p>
+
+        <div class="crossing__labels" aria-hidden="true"></div>
+        <div class="crossing__points" role="group" aria-label="Checkpoints da trilha — use as setas para navegar"></div>
+        <div class="cp-tip" aria-hidden="true"></div>
+
+        <div class="crossing__panel">
+          <div class="panel__meta mono"><span data-p="num"></span><span data-p="stage"></span></div>
+          <h3 data-p="title" lang="en"></h3>
+          <p class="panel__speakers" data-p="speakers"></p>
+          <p class="panel__focus" data-p="focus"></p>
+          <p class="panel__challenge"><span class="mono">Desafio prático</span><span data-p="challenge"></span></p>
+          <div class="panel__foot">
+            <span class="state" data-p="state"></span>
+            <div class="panel__nav">
+              <button type="button" class="icon-btn" data-step="-1" aria-label="Missão anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+              <button type="button" class="icon-btn" data-step="1" aria-label="Próxima missão"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="crossing__readout mono" aria-hidden="true">
+          <span>Checkpoints revelados</span>
+          <strong><b data-readout>01</b> / 20</strong>
+          <span class="readout__bar"><i></i></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- A trilha completa — caminho browniano que se ilumina com o scroll -->
+    <section class="trail" id="trilha" aria-labelledby="trail-title">
+      <div class="container">
+        <header class="section-head trail__head reveal">
+          <p class="eyebrow">A trilha completa</p>
+          <h2 id="trail-title">Nenhum caminho é uma linha reta.</h2>
+          <p class="lead">20 missões, 9 estágios. Role e acompanhe a trilha se iluminar, aula por aula.</p>
+        </header>
+        <div class="trail__map" data-trail>
+          <svg class="trail__svg" aria-hidden="true">
+            <g class="trail__topo" data-topo></g>
+            <path class="trail__base" data-trail-base/>
+            <path class="trail__lit" data-trail-lit/>
+            <circle class="trail__walker-halo" r="16" data-walker-halo/>
+            <circle class="trail__walker" r="5" data-walker/>
+          </svg>
+          <ol class="trail__list" data-trail-list aria-label="As 20 missões da jornada"></ol>
+        </div>
+        <p class="trail__end mono reveal">Fim da trilha · início da sua empresa</p>
+      </div>
+    </section>
+
+    <!-- ============ 03 · COMO FUNCIONA ============ -->
+    <section class="section learn" id="como-funciona" aria-labelledby="learn-title">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow">03 — Como funciona</p>
+          <h2 id="learn-title">Empreendedorismo não se aprende apenas assistindo.</h2>
+          <p class="lead">Assista. Experimente. Construa. Cada aula é um passo para tirar uma ideia do papel.</p>
+        </header>
+
+        <ol class="learn__track">
+          <li class="learn__rail" aria-hidden="true"><i></i></li>
+          <li class="learn__step reveal">
+            <span class="learn__node mono">01</span>
+            <svg class="learn__glyph" viewBox="0 0 160 110" aria-hidden="true">
+              <rect x="20" y="14" width="120" height="76" class="g-line"/>
+              <path d="M20 26h120" class="g-faint"/>
+              <path d="M72 42v32l26-16z" class="g-accent"/>
+              <path d="M20 100h120M20 96v8M140 96v8" class="g-faint"/>
+            </svg>
+            <h3>Aprenda</h3>
+            <p>Conteúdo de referência sobre criação de startups, organizado em uma trilha com começo, meio e próximos passos.</p>
+            <p class="learn__ex mono">20 aulas · 9 estágios</p>
+          </li>
+          <li class="learn__step reveal">
+            <span class="learn__node mono">02</span>
+            <svg class="learn__glyph" viewBox="0 0 160 110" aria-hidden="true">
+              <path d="M80 18l34 19.6v39.2L80 96.4 46 76.8V37.6z" class="g-line"/>
+              <path d="M80 57.2l34-19.6M80 57.2v39.2M80 57.2L46 37.6" class="g-faint"/>
+              <path d="M80 18l34 19.6L80 57.2 46 37.6z" class="g-accent-fill"/>
+              <path d="M14 96h18M128 96h18" class="g-faint"/>
+            </svg>
+            <h3>Construa</h3>
+            <p>Missões práticas para aplicar o que foi aprendido — entrevistas, protótipos, métricas, pitch.</p>
+            <p class="learn__ex"><span class="mono">Exemplo</span> Conduza cinco entrevistas sem apresentar a sua solução.</p>
+          </li>
+          <li class="learn__step reveal">
+            <span class="learn__node mono">03</span>
+            <svg class="learn__glyph" viewBox="0 0 160 110" aria-hidden="true">
+              <path d="M24 96h28V74h28V52h28V30h28" class="g-line"/>
+              <path d="M24 96h112M52 96V74M80 96V52M108 96V30" class="g-faint"/>
+              <circle cx="136" cy="30" r="5" class="g-accent-dot"/>
+            </svg>
+            <h3>Evolua</h3>
+            <p>Acompanhe seu progresso, mantenha a consistência e desbloqueie novos desafios a cada etapa.</p>
+            <p class="learn__ex mono">XP · Founder Level · Streak</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============ 04 · PROGRESSO / GAMIFICAÇÃO ============ -->
+    <section class="section progress" id="progresso" aria-labelledby="progress-title">
+      <div class="container">
+        <header class="section-head section-head--split reveal">
+          <div>
+            <p class="eyebrow">04 — Seu progresso</p>
+            <h2 id="progress-title">Seu progresso merece ser visto.</h2>
+          </div>
+          <p class="lead">Transforme consistência em conquistas e acompanhe sua evolução como Founder.</p>
+        </header>
+
+        <div class="passport reveal" data-passport>
+          <div class="passport__bar">
+            <span class="mono passport__brand">Founder Passport</span>
+            <span class="tag mono">Dados demonstrativos</span>
+          </div>
+
+          <div class="profile" data-profile>
+            <div class="avatar">
+              <svg class="avatar__ring" viewBox="0 0 100 100" aria-hidden="true">
+                <circle cx="50" cy="50" r="47" class="avatar__track"/>
+                <circle cx="50" cy="50" r="47" class="avatar__progress" data-avatar-ring/>
+              </svg>
+              <img src="assets/img/profile.jpg" alt="" data-avatar-img width="240" height="240">
+              <span class="avatar__lvl mono" data-avatar-lvl></span>
+            </div>
+            <div class="profile__id">
+              <p class="profile__name" data-profile-name></p>
+              <p class="profile__meta mono" data-profile-meta></p>
+              <p class="profile__since" data-profile-since></p>
+            </div>
+            <dl class="profile__chips">
+              <div><dt class="mono">XP</dt><dd data-chip="xp"></dd></div>
+              <div><dt class="mono">Streak</dt><dd data-chip="streak"></dd></div>
+              <div><dt class="mono">Conquistas</dt><dd data-chip="badges"></dd></div>
+              <div><dt class="mono">Projetos</dt><dd data-chip="projects"></dd></div>
+            </dl>
+          </div>
+
+          <div class="passport__grid">
+            <article class="pcard pcard--level">
+              <p class="pcard__label mono">Founder Level</p>
+              <div class="level__row">
+                <span class="level__num mono" data-level-num></span>
+                <span class="level__name" data-level-name></span>
+              </div>
+              <div class="xp">
+                <div class="xp__head mono"><span data-xp-text></span><span data-xp-next></span></div>
+                <div class="bar"><i data-xp-bar></i></div>
+              </div>
+              <ol class="ladder" data-ladder aria-label="Níveis de Founder"></ol>
+            </article>
+
+            <article class="pcard pcard--streak">
+              <div class="streak__head">
+                <dl class="stats">
+                  <div><dt class="mono">Sequência atual</dt><dd><b data-stat="current"></b> dias</dd></div>
+                  <div><dt class="mono">Maior sequência</dt><dd><b data-stat="longest"></b> dias</dd></div>
+                  <div><dt class="mono">Dias ativos</dt><dd><b data-stat="active"></b></dd></div>
+                </dl>
+                <div class="seg" role="radiogroup" aria-label="Período do calendário">
+                  <button type="button" role="radio" aria-checked="false" data-range="30">30 dias</button>
+                  <button type="button" role="radio" aria-checked="true" data-range="90">90 dias</button>
+                  <button type="button" role="radio" aria-checked="false" data-range="365">1 ano</button>
+                </div>
+              </div>
+              <div class="cal" data-cal role="img"></div>
+              <div class="cal__legend mono" aria-hidden="true">Menos <i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i> Mais</div>
+              <p class="pcard__note">A sequência só avança com atividades válidas — concluir uma aula, finalizar um desafio, registrar uma entrega. Entrar na plataforma não conta.</p>
+            </article>
+
+            <article class="pcard pcard--badges">
+              <p class="pcard__label mono">Conquistas <span data-badge-count></span></p>
+              <div class="badges" data-badges></div>
+            </article>
+
+            <article class="pcard pcard--journey">
+              <p class="pcard__label mono">Sua jornada</p>
+              <p class="journey__count"><b data-j-done></b><span> / 20 aulas</span></p>
+              <p class="mono journey__pct" data-j-pct></p>
+              <div class="ticks" data-ticks aria-hidden="true"></div>
+              <div class="next">
+                <p class="mono">Próxima missão</p>
+                <p class="next__title" data-next-title lang="en"></p>
+                <p class="next__stage mono" data-next-stage></p>
+              </div>
+            </article>
+          </div>
+
+          <div class="toast" role="status" aria-live="polite" data-toast>
+            <span class="toast__icon" aria-hidden="true"></span>
+            <div>
+              <p class="mono toast__kicker">Achievement unlocked</p>
+              <p class="toast__title mono" data-toast-title></p>
+              <p class="toast__quote" data-toast-quote></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 05 · EVOLUÇÃO DE UMA STARTUP ============ -->
+    <section class="evo" id="evolucao" aria-labelledby="evo-title">
+      <div class="evo__sticky">
+        <div class="container evo__grid">
+          <div class="evo__text">
+            <p class="eyebrow">05 — De uma ideia a uma empresa</p>
+            <h2 id="evo-title">Grandes empresas começaram pequenas.</h2>
+            <div class="evo__stage" aria-live="polite">
+              <p class="mono evo__num" data-evo-num>01 / 08</p>
+              <p class="evo__name" data-evo-name lang="en">IDEA</p>
+              <p class="evo__desc" data-evo-desc></p>
+            </div>
+            <p class="evo__note">Uma trajetória possível, não obrigatória. Muitas empresas crescem sem captar investimento — bootstrap também é caminho.</p>
+          </div>
+          <div class="evo__art">
+            <svg class="iso" data-iso viewBox="-300 -300 600 640" aria-hidden="true"></svg>
+            <dl class="evo__hud" aria-label="Métricas ilustrativas">
+              <div><dt class="mono">Usuários</dt><dd data-hud="users">1</dd></div>
+              <div><dt class="mono">Equipe</dt><dd data-hud="team">1</dd></div>
+              <div><dt class="mono">Estrutura</dt><dd><span data-hud="blocks">1</span><small> módulos</small></dd></div>
+              <p class="mono evo__hud-note">Valores ilustrativos</p>
+            </dl>
+          </div>
+        </div>
+        <div class="container">
+          <ol class="evo__rail" data-evo-rail aria-label="Etapas da evolução"></ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 06 · CHAMADA FINAL ============ -->
+    <section class="finale" id="comecar" aria-labelledby="finale-title">
+      <canvas class="finale__canvas" aria-hidden="true"></canvas>
+      <div class="finale__content">
+        <h2 id="finale-title" class="reveal">Todo Founder começa do zero.</h2>
+        <p class="reveal">A diferença está em quem decide começar.</p>
+        <button type="button" class="btn btn--primary btn--lg reveal" data-start>Começar minha jornada <span class="arrow" aria-hidden="true">→</span></button>
+        <p class="finale__foot mono reveal">20 aulas. Uma jornada. Seu próximo passo.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div>
+        <p class="logo logo--static">STARTUP SCHOOL</p>
+        <p class="footer__note">Plataforma educacional independente, inspirada em conteúdos públicos da Y Combinator. Sem afiliação oficial.</p>
+      </div>
+      <p class="mono footer__coords">37.8199° N / 122.4783° W<br>Make something people want.</p>
+    </div>
+  </footer>
+
+  <!-- Entrar: sem autenticação falsa -->
+  <dialog class="dialog" id="login-dialog" aria-labelledby="login-title">
+    <form method="dialog" class="dialog__inner">
+      <p class="eyebrow">Entrar</p>
+      <h2 id="login-title">Contas pessoais estão chegando.</h2>
+      <p>Por enquanto, seu progresso fica salvo neste navegador — sem cadastro e sem senha. Contas pessoais estarão disponíveis em breve.</p>
+      <div class="dialog__actions">
+        <button type="button" class="btn btn--primary" data-start>Começar sem conta <span class="arrow" aria-hidden="true">→</span></button>
+        <button type="submit" class="btn btn--ghost">Fechar</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>
