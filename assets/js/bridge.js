@@ -200,7 +200,7 @@
     }, opts || {});
     this.P = PAL.dark;
     this.theme = 'dark';
-    this.state = { fogBoost: 0, revealX: Infinity, lit: 0, highlight: -1, path: 0, glow: -1, glowAmt: 1, frontier: null };
+    this.state = { fogBoost: 0, revealX: Infinity, lit: 0, highlight: -1, path: 0, glow: -1, glowAmt: 1, frontier: null, twinkle: -1 };
     this.cam = null;
     this.resize();
   }
@@ -565,6 +565,51 @@
         rg.addColorStop(1, css(P.red, 0));
         ctx.fillStyle = rg;
         ctx.fillRect(gp.x - R, gp.y - R, R * 2, R * 2);
+      }
+    }
+
+    if (st.twinkle >= 0) this.drawTwinkle(hz);
+  };
+
+  /* Luzes dos checkpoints piscando de forma aleatória e fraca, com reflexo leve na água. */
+  BridgeView.prototype.drawTwinkle = function (hz) {
+    var ctx = this.ctx, P = this.P, st = this.state, o = this.o, t = st.twinkle;
+    if (st.lit < 1) return;
+    /* Três pontos de luz por vez: a cada intervalo sorteia 3 checkpoints distintos e o pulso sobe e desce suave. */
+    var SLOT = 2.46, COUNT = Math.min(3, st.lit), slot = Math.floor(t / SLOT), u = t / SLOT - slot;
+    function pick(n) { var x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+    var chosen = [];
+    for (var q = 0; chosen.length < COUNT; q++) {
+      var c = Math.floor(pick(slot * 7 + q * 13.37) * st.lit);
+      if (chosen.indexOf(c) < 0) chosen.push(c);
+    }
+    var k = Math.pow(Math.sin(Math.PI * u), 2);
+    for (var ci = 0; ci < chosen.length; ci++) {
+      var i = chosen[ci];
+      var x = SS.checkpointX(i);
+      var p = this.project([x, G.DECK_Y + 1.6, o.checkpointZ]);
+      if (p) {
+        var R = clamp(p.scale * 34, 10, 46);
+        var g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, R);
+        g.addColorStop(0, css(P.red, 0.34 * k));
+        g.addColorStop(1, css(P.red, 0));
+        ctx.fillStyle = g;
+        ctx.fillRect(p.x - R, p.y - R, R * 2, R * 2);
+      }
+      if (o.reflection) {
+        var m = this.project([x, -(G.DECK_Y + 1.6), o.checkpointZ]);
+        if (m && m.y > hz) {
+          var Rr = clamp(m.scale * 34, 10, 46);
+          ctx.save();
+          ctx.beginPath(); ctx.rect(0, hz, this.w, this.h - hz); ctx.clip();
+          ctx.translate(m.x, m.y); ctx.scale(0.55, 2.6);
+          var rg2 = ctx.createRadialGradient(0, 0, 0, 0, 0, Rr);
+          rg2.addColorStop(0, css(P.red, 0.13 * k));
+          rg2.addColorStop(1, css(P.red, 0));
+          ctx.fillStyle = rg2;
+          ctx.fillRect(-Rr, -Rr, Rr * 2, Rr * 2);
+          ctx.restore();
+        }
       }
     }
   };

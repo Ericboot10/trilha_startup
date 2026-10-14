@@ -1061,9 +1061,12 @@
           path = reduced() ? 1 : easeInOut(clamp((now() - t0 - 0.3) / 2.8, 0, 1));
           if (path < 1) anim = true;
         }
-        var key = [cur.toFixed(4), path.toFixed(4), view.theme, view.w, view.h].join('|');
+        var tw = path >= 1 && !reduced() ? Math.round(now() * 20) / 20 : -1;
+        if (tw >= 0) anim = true;
+        var key = [cur.toFixed(4), path.toFixed(4), view.theme, view.w, view.h, tw].join('|');
         if (key === lastKey) return anim;
         lastKey = key;
+        view.state.twinkle = tw;
         var c = byAspect(view.w, view.h, CAMS.finale.wide, CAMS.finale.tall);
         view.setCamera(V.add(c.pos, [cur * 120, 0, 0]), c.target, c.fov);
         view.state.path = path;
