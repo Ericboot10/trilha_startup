@@ -4,6 +4,7 @@
 :root {
   --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-serif: Georgia, "Times New Roman", serif;
 
   --ease-out: cubic-bezier(.16, 1, .3, 1);
   --ease-io: cubic-bezier(.65, 0, .35, 1);
@@ -230,6 +231,7 @@ a { color: inherit; text-decoration: none; }
 }
 .hero__title span { display: block; }
 .hero__title em { font-style: normal; color: var(--red); }
+.hero__title--serif { font-family: var(--font-serif); font-weight: 400; letter-spacing: -.03em; }
 .hero__sub { font-size: clamp(15px, 1.1vw, 17px); line-height: 1.5; color: var(--text-2); max-width: 460px; }
 .hero__meta { margin-top: 18px; color: var(--text-2); letter-spacing: .14em; }
 .hero__meta i { font-style: normal; color: var(--red); padding: 0 6px; }
