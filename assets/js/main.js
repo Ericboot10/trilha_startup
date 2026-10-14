@@ -425,6 +425,21 @@
     var GAP = 150, PAD = 70;
     var nodes = [], samples = [], total = 1, Ls = 0, lastL = -1, built = false;
 
+    // Retrato do palestrante principal de cada aula (sem foto livre disponível → iniciais).
+    var PORTRAITS = [
+      ['sam-altman'], ['paul-graham'], ['peter-thiel'], ['adora-cheung'], ['emmett-shear'],
+      ['justin-kan'], [null, 'HR'], [null, 'KH'], [null, 'AS'], ['sam-altman'],
+      [null, 'CL'], ['marc-andreessen'], [null, 'TB'], ['aaron-levie'], ['brian-chesky'],
+      ['patrick-collison'], ['keith-rabois'], ['ben-horowitz'], ['reid-hoffman'], ['sam-altman']
+    ];
+    function avatar(i) {
+      var pt = PORTRAITS[i];
+      if (!pt) return '';
+      return '<span class="tnode__avatar" aria-hidden="true">' +
+        (pt[0] ? '<img src="assets/img/people/' + pt[0] + '.jpg" alt="" width="40" height="40" loading="lazy" decoding="async">' : '<b>' + pt[1] + '</b>') +
+        '</span>';
+    }
+
     // Itens da trilha (HTML real, acessível): um <li> por missão.
     list.innerHTML = LESSONS.map(function (l, i) {
       var firstOfStage = i === 0 || LESSONS[i - 1].stage !== l.stage;
@@ -434,7 +449,7 @@
         (firstOfStage ? '<p class="tnode__stage mono">' + esc(stageLabel(l.stage)) + '</p>' : '') +
         '<p class="tnode__num mono">Missão ' + pad2(i + 1) + ' <span>· Aula ' + pad2(l.playlist) + '</span></p>' +
         '<h3 lang="en">' + esc(l.title) + '</h3>' +
-        '<p class="tnode__meta">' + esc(l.speakers) + '</p>' +
+        '<p class="tnode__meta">' + avatar(i) + '<span>' + esc(l.speakers) + '</span></p>' +
         '<p class="tnode__focus">' + esc(l.focus) + '</p>' +
         '</div></li>';
     }).join('');
