@@ -203,6 +203,11 @@
   /* =========================================================
      02 · A travessia
      ========================================================= */
+  // Conquista "Network Effect": a travessia completa desbloqueia a rede do outro lado.
+  var NET_KEY = 'ss-network-effect';
+  var netUnlocked = (function () { try { return localStorage.getItem(NET_KEY) === '1'; } catch (e) { return false; } })();
+  var bridgeCrossed = netUnlocked;
+
   var crossing = (function () {
     var section = $('#travessia');
     var canvas = $('.crossing__canvas', section);
@@ -211,6 +216,15 @@
     var tip = $('.cp-tip', section), fogline = $('.crossing__fogline', section), panel = $('.crossing__panel', section);
     var readout = $('[data-readout]', section), readBar = $('.readout__bar', section);
     var fogs = $$('.crossing__fog', section);
+    var goal = $('[data-goal]', section);
+    function setGoal() {
+      if (!goal) return;
+      goal.textContent = 'Network Effect · ' + (netUnlocked ? 'desbloqueado' : bridgeCrossed ? 'pronto — continue ↓' : 'bloqueado');
+      goal.classList.toggle('is-ready', bridgeCrossed && !netUnlocked);
+      goal.classList.toggle('is-done', netUnlocked);
+    }
+    setGoal();
+    document.addEventListener('ss:network-unlocked', setGoal);
     var view = new SS.BridgeView(canvas, { drawCheckpoints: false, land: true, checkpointZ: 0, fogStart: 1100, fogEnd: 6200, fogMax: 0.8, lowFog: 0.4 });
     view.setTheme(currentTheme());
     var visible = false, pS = 0, lastKey = '', selected = 0, hovered = -1, revealX = -Infinity;
@@ -344,14 +358,14 @@
       var revealed = 0;
       btns.forEach(function (b, i) {
         var x = SS.checkpointX(i);
+        var fogged = x > revealX + 40;
+        if (!fogged) revealed++;
         var pr = view.project([x, G.DECK_Y + 1.5, 0]);
         b._p = pr;
         if (!pr) { b.classList.add('is-hidden'); return; }
         b.classList.remove('is-hidden');
         b.style.transform = 'translate(' + pr.x.toFixed(1) + 'px,' + pr.y.toFixed(1) + 'px)';
         b.classList.add('is-placed');
-        var fogged = x > revealX + 40;
-        if (!fogged) revealed++;
         if (b._f !== fogged) {
           if (b._f === true && !fogged && !reduced()) {
             b.classList.add('just-revealed');
@@ -376,6 +390,7 @@
 
       fogline.style.opacity = (sstep(0.14, 0.26, pS) * (1 - sstep(0.5, 0.62, pS))).toFixed(3);
       fogline.style.transform = 'translateY(' + ((1 - sstep(0.14, 0.3, pS)) * 14).toFixed(1) + 'px)';
+      if (revealed === 20 && !bridgeCrossed) { bridgeCrossed = true; setGoal(); }
       readout.textContent = pad2(revealed);
       readBar.style.setProperty('--r', (revealed / 20).toFixed(3));
       return anim;
@@ -412,6 +427,310 @@
     }
   }
   $$('[data-start]').forEach(function (b) { b.addEventListener('click', startJourney); });
+
+  /* =========================================================
+     Do outro lado da ponte — Network Effect
+     Rede ilustrativa: congelada e cinza até a travessia terminar; então acende
+     a partir do seu nó (início, vermelho) e se espalha até as bordas (conquista, dourado).
+     ========================================================= */
+  var network = (function () {
+    var section = $('#rede');
+    var canvas = section && $('.network__canvas', section);
+    if (!canvas || !canvas.getContext) return null;
+    var ctx = canvas.getContext('2d');
+    var head = $('.network__head', section), you = $('[data-net-you]', section);
+    var toast = $('[data-net-toast]', section), back = $('[data-net-back]', section);
+    var PAL = {
+      dark: { red: [229, 72, 61], gold: [245, 185, 66], idle: [74, 74, 78], idleEdge: 'rgba(255,255,255,.1)', halo: 1 },
+      light: { red: [200, 63, 53], gold: [185, 122, 14], idle: [170, 162, 152], idleEdge: 'rgba(23,23,23,.14)', halo: .6 }
+    };
+    var BASE = { founders: 12483, startups: 1927, jobs: 38210, cities: 214 };
+    var TODAY = { founders: 142, startups: 9, jobs: 611, cities: 3 };
+    var extra = { founders: 0, startups: 0, jobs: 0, cities: 0 };
+    var numEls = {}, deltaEls = {};
+    Object.keys(BASE).forEach(function (k) {
+      numEls[k] = $('[data-net="' + k + '"]', section);
+      deltaEls[k] = $('[data-net-delta="' + k + '"]', section);
+    });
+    var nf = new Intl.NumberFormat('pt-BR');
+    var IGN = 2.4; // duração da onda de ignição (s)
+
+    var w = 0, h = 0, dpr = 1, nodes = [], extras = [], origin = null, initialCount = 0;
+    var visible = false, q = 0, lastKey = '';
+    var t0 = 0, u = -1; // u: segundos desde o desbloqueio (-1 = congelado)
+    var spawned = 0, nextSpawn = 0, nextTick = 0, pulses = [], toastShown = false;
+
+    function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a.toFixed(3) + ')'; }
+    function mix(a, b, t) { return [Math.round(lerp(a[0], b[0], t)), Math.round(lerp(a[1], b[1], t)), Math.round(lerp(a[2], b[2], t))]; }
+    function dot(x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.fill(); }
+    function setText(el, s) { if (el && el.textContent !== s) el.textContent = s; }
+
+    // Grafo determinístico: cada nó se liga ao vizinho mais próximo que está mais perto do seu nó.
+    function build() {
+      var r = canvas.getBoundingClientRect();
+      w = r.width; h = r.height;
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      var F = w < 760 ? { x0: .05, x1: .97, y0: .3, y1: .58, ox: .1, oy: .54 } : { x0: .1, x1: .98, y0: .2, y1: .8, ox: .16, oy: .7 };
+      var fx0 = F.x0 * w, fx1 = F.x1 * w, fy0 = F.y0 * h, fy1 = F.y1 * h;
+      var area = (fx1 - fx0) * (fy1 - fy0);
+      var n = Math.round(clamp(area / 3600, 70, 170)), spare = Math.round(n * .3);
+      var md = Math.sqrt(area / (n + spare)) * .62;
+      var seed = 11;
+      function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+      var pts = [{ x: F.ox * w, y: F.oy * h }];
+      for (var tries = 0; pts.length < n + spare && tries < 9000; tries++) {
+        var x = fx0 + rnd() * (fx1 - fx0), y = fy0 + rnd() * (fy1 - fy0), ok = true;
+        for (var j = 0; j < pts.length && ok; j++) {
+          var dx = pts[j].x - x, dy = pts[j].y - y;
+          if (dx * dx + dy * dy < md * md) ok = false;
+        }
+        if (ok) pts.push({ x: x, y: y });
+      }
+      var o = pts[0];
+      pts.forEach(function (p) { p.d = Math.hypot(p.x - o.x, p.y - o.y); });
+      pts.sort(function (a, b) { return a.d - b.d; });
+      var dMax = pts[pts.length - 1].d || 1;
+      initialCount = Math.min(n, pts.length);
+      extras = [];
+      pts.forEach(function (p, k) {
+        p.kids = 0; p.parent = -1; p.ign = 0; p.t = sstep(.12, .85, p.d / dMax); p.tw = rnd() * 6.28;
+        if (!k) return;
+        var best = -1, bd = Infinity, second = -1, sd = Infinity;
+        for (var j = 0; j < k; j++) {
+          var dd = Math.hypot(pts[j].x - p.x, pts[j].y - p.y);
+          if (dd < bd) { second = best; sd = bd; best = j; bd = dd; } else if (dd < sd) { second = j; sd = dd; }
+        }
+        p.parent = best;
+        pts[best].kids++;
+        p.ign = pts[best].ign + .15 + bd / Math.max(w, h) * 2.4;
+        if (second >= 0 && sd < md * 2.4 && rnd() < .4) extras.push([second, k]);
+      });
+      var igMax = 0, k;
+      for (k = 0; k < initialCount; k++) igMax = Math.max(igMax, pts[k].ign);
+      var s = IGN / (igMax || 1);
+      pts.forEach(function (p, k) {
+        p.ign *= s;
+        p.start = k ? pts[p.parent].ign : 0;
+        p.r = (k ? 1.5 : 4.5) + Math.sqrt(p.kids) * .8;
+      });
+      // Os nós mais distantes nascem depois, um por vez, enquanto a rede está viva.
+      for (k = initialCount; k < pts.length; k++) {
+        var born = k < initialCount + spawned;
+        pts[k].start = born ? -10 : Infinity;
+        pts[k].ign = born ? -9 : Infinity;
+      }
+      nodes = pts;
+      origin = pts[0];
+      lastKey = '';
+    }
+
+    function goLive(t, instant) {
+      t0 = instant ? t - 100 : t;
+      u = t - t0;
+      nextSpawn = u + (instant ? .5 : IGN + 1);
+      nextTick = u + (instant ? .3 : IGN + .4);
+      section.classList.remove('is-frozen');
+      section.classList.add('is-live');
+      setText(you, 'Você · founder nº ' + nf.format(BASE.founders + 1));
+    }
+
+    function unlock(t) {
+      netUnlocked = true;
+      try { localStorage.setItem(NET_KEY, '1'); } catch (e) { /* armazenamento indisponível */ }
+      goLive(t, reduced());
+      document.dispatchEvent(new CustomEvent('ss:network-unlocked'));
+      setTimeout(function () {
+        toast.classList.add('is-on');
+        setTimeout(function () { toast.classList.remove('is-on'); }, 5200);
+      }, reduced() ? 0 : 1200);
+    }
+
+    // Rede viva: novos nós, pulsos de luz e contadores que não param.
+    function step(dt) {
+      if (u < IGN) return;
+      if (u > nextSpawn && initialCount + spawned < nodes.length) {
+        var p = nodes[initialCount + spawned];
+        spawned++;
+        p.start = u; p.ign = u + .7;
+        extra.founders++;
+        nextSpawn = u + 1 + Math.random() * 1.3;
+      }
+      if (u > nextTick) {
+        if (Math.random() < .5) extra.founders++;
+        extra.jobs += 1 + Math.floor(Math.random() * 7);
+        if (Math.random() < .14) extra.startups++;
+        if (Math.random() < .02) extra.cities++;
+        nextTick = u + .45 + Math.random() * .7;
+      }
+      if (pulses.length < 36 && Math.random() < dt * 9) {
+        var k = 1 + Math.floor(Math.random() * (initialCount + spawned - 1));
+        if (nodes[k] && u > nodes[k].ign) pulses.push({ k: k, t: u, dur: .6 + Math.random() * .7 });
+      }
+      pulses = pulses.filter(function (pl) { return u - pl.t < pl.dur; });
+    }
+
+    function updateStats() {
+      if (u < 0) return;
+      var c = reduced() ? 1 : easeOut(clamp((u - .5) / 2.2, 0, 1));
+      Object.keys(BASE).forEach(function (k) {
+        setText(numEls[k], nf.format(Math.round(BASE[k] * c) + extra[k]));
+        setText(deltaEls[k], '▲ +' + nf.format(Math.round(TODAY[k] * c) + extra[k]) + ' hoje');
+      });
+    }
+
+    function draw() {
+      var P = PAL[currentTheme()], live = u >= 0, rm = reduced();
+      var k, p, a, col;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      // Scroll: começa aproximada no seu nó e abre a rede conforme a página desce.
+      var z = 1 + (1 - sstep(0, .75, q)) * .14;
+      ctx.translate(origin.x, origin.y);
+      ctx.scale(z, z);
+      ctx.translate(-origin.x, -origin.y);
+
+      // Fim da ponte: o tabuleiro chega pela esquerda até o seu nó.
+      var deckA = live ? Math.min(1, u / .5) : 0;
+      ctx.fillStyle = rgba(mix(P.idle, P.red, deckA), .35 + deckA * .5);
+      ctx.beginPath();
+      ctx.moveTo(-80, origin.y + 80);
+      ctx.lineTo(origin.x - 6, origin.y + 3);
+      ctx.lineTo(origin.x - 6, origin.y - 1);
+      ctx.lineTo(-80, origin.y + 50);
+      ctx.closePath();
+      ctx.fill();
+      for (k = 1; k < 7; k++) {
+        var f = k / 7;
+        ctx.fillStyle = rgba(live ? P.gold : P.idle, live ? .55 * deckA : .4);
+        dot(lerp(-80, origin.x - 6, f), lerp(origin.y + 50, origin.y - 1, f) - 2, 1.2 + (1 - f) * 1.2);
+      }
+
+      // Onda de choque do desbloqueio.
+      if (live && u < 2.4 && !rm) {
+        for (var i = 0; i < 2; i++) {
+          var e = (u - i * .3) / 1.9;
+          if (e <= 0 || e >= 1) continue;
+          ctx.beginPath();
+          ctx.arc(origin.x, origin.y, easeOut(e) * Math.max(w, h) * .95, 0, 6.2832);
+          ctx.strokeStyle = rgba(i ? P.gold : P.red, (1 - e) * .55);
+          ctx.lineWidth = 2 * (1 - e) + .5;
+          ctx.stroke();
+        }
+      }
+
+      // Camada congelada: arestas tracejadas.
+      ctx.setLineDash([2, 4]);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = P.idleEdge;
+      ctx.beginPath();
+      for (k = 1; k < initialCount; k++) {
+        p = nodes[k]; a = nodes[p.parent];
+        if (live && u >= p.ign) continue;
+        ctx.moveTo(a.x, a.y); ctx.lineTo(p.x, p.y);
+      }
+      extras.forEach(function (ed) {
+        if (ed[1] >= initialCount) return;
+        ctx.moveTo(nodes[ed[0]].x, nodes[ed[0]].y); ctx.lineTo(nodes[ed[1]].x, nodes[ed[1]].y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      if (live) {
+        // A luz percorre cada aresta do pai até o filho.
+        for (k = 1; k < nodes.length; k++) {
+          p = nodes[k];
+          if (!(u > p.start)) continue;
+          a = nodes[p.parent];
+          var pr = clamp((u - p.start) / (p.ign - p.start), 0, 1);
+          col = mix(P.red, P.gold, p.t);
+          ctx.strokeStyle = rgba(col, .5);
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          var hx = lerp(a.x, p.x, pr), hy = lerp(a.y, p.y, pr);
+          ctx.lineTo(hx, hy);
+          ctx.stroke();
+          if (pr < 1) { ctx.fillStyle = rgba(col, .9); dot(hx, hy, 1.6); }
+        }
+        extras.forEach(function (ed) {
+          var m = Math.max(nodes[ed[0]].ign, nodes[ed[1]].ign);
+          if (!(u > m)) return;
+          ctx.strokeStyle = rgba(mix(P.red, P.gold, nodes[ed[1]].t), Math.min(1, (u - m) / .6) * .2);
+          ctx.beginPath();
+          ctx.moveTo(nodes[ed[0]].x, nodes[ed[0]].y);
+          ctx.lineTo(nodes[ed[1]].x, nodes[ed[1]].y);
+          ctx.stroke();
+        });
+        pulses.forEach(function (pl) {
+          var b = nodes[pl.k], c = nodes[b.parent], e = (u - pl.t) / pl.dur;
+          var x = lerp(c.x, b.x, e), y = lerp(c.y, b.y, e), cl = mix(P.red, P.gold, b.t);
+          ctx.fillStyle = rgba(cl, .18 * P.halo); dot(x, y, 5);
+          ctx.fillStyle = rgba(cl, .95); dot(x, y, 1.6);
+        });
+      }
+
+      // Nós.
+      for (k = 0; k < nodes.length; k++) {
+        p = nodes[k];
+        if (k >= initialCount && !(u > p.start)) continue;
+        if (!live || u < p.ign) {
+          ctx.fillStyle = rgba(P.idle, .9);
+          dot(p.x, p.y, p.r * .85);
+          continue;
+        }
+        var age = u - p.ign, pop = rm ? 1 : 1 + 1.6 * Math.exp(-age * 6);
+        var tw = rm ? 1 : .8 + .2 * Math.sin(u * 1.7 + p.tw);
+        col = k ? mix(P.red, P.gold, p.t) : P.red;
+        if (p.r > 2.4 || pop > 1.3) { ctx.fillStyle = rgba(col, .14 * tw * P.halo); dot(p.x, p.y, p.r * 3.6 * pop); }
+        ctx.fillStyle = rgba(col, .95 * tw);
+        dot(p.x, p.y, p.r * pop);
+      }
+
+      // Seu nó: anel de origem.
+      ctx.lineWidth = 1;
+      if (live) {
+        var ring = rm ? 0 : (u % 2.2) / 2.2;
+        ctx.strokeStyle = rgba(P.red, .7 * (1 - ring));
+        ctx.beginPath(); ctx.arc(origin.x, origin.y, 9 + ring * 16, 0, 6.2832); ctx.stroke();
+      } else {
+        ctx.setLineDash([2, 3]);
+        ctx.strokeStyle = rgba(P.idle, .9);
+        ctx.beginPath(); ctx.arc(origin.x, origin.y, 10, 0, 6.2832); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      you.style.transform = 'translate(' + (origin.x - 10).toFixed(1) + 'px,' + (origin.y - 18).toFixed(1) + 'px) translateY(-100%)';
+    }
+
+    themeHandlers.push(function () { lastKey = ''; });
+    observe(section, function (v) { visible = v; if (v) requestFrame(); });
+    if (back) back.addEventListener('click', function () { if (crossing) crossing.goToStart(true); });
+
+    function tick(t, dt) {
+      if (!visible) return false;
+      if (!w) build();
+      var rect = section.getBoundingClientRect();
+      q = clamp(-rect.top / Math.max(1, rect.height - window.innerHeight), 0, 1);
+      if (u < 0 && netUnlocked) goLive(t, true);
+      else if (u < 0 && bridgeCrossed && q > .06) unlock(t);
+      if (u >= 0) u = t - t0;
+      if (back) back.hidden = bridgeCrossed;
+      head.style.transform = 'translate3d(0,' + (-q * 36).toFixed(1) + 'px,0)';
+
+      var anim = u >= 0 && !reduced();
+      if (anim) step(dt);
+      updateStats();
+      var key = [w, h, currentTheme(), q.toFixed(4), u >= 0].join('|');
+      if (!anim && key === lastKey) return false;
+      lastKey = key;
+      draw();
+      return anim;
+    }
+
+    return { tick: tick, resize: function () { w = 0; } };
+  })();
+  if (network) scenes.push(network);
 
   /* =========================================================
      A trilha completa — caminho browniano que se ilumina
@@ -655,7 +974,8 @@
     var progress = {
       completedLessons: LESSONS.slice(0, 7).map(function (l) { return l.id; }),
       completedChallenges: LESSONS.slice(0, 5).map(function (l) { return l.id; }),
-      projects: 0
+      projects: 0,
+      crossed: netUnlocked
     };
 
     var stats = game.streakStats(activity, today);
@@ -751,7 +1071,8 @@
       ship: '<path d="M16 27l8-8 8 8M16 34l8-8 8 8M24 13v6"/>',
       cube: '<path d="M24 13l10 5.8v11.4L24 36l-10-5.8V18.8z"/><path d="M24 24.6l10-5.8M24 24.6V36M24 24.6l-10-5.8"/>',
       streak: '<path d="M14 30h3v-4h-3zM19.5 30h3v-7h-3zM25 30h3v-10h-3zM30.5 30h3v-13h-3z"/>',
-      one: '<circle cx="19" cy="24" r="6"/><path d="M31 18v12M28.5 20l2.5-2"/>'
+      one: '<circle cx="19" cy="24" r="6"/><path d="M31 18v12M28.5 20l2.5-2"/>',
+      network: '<circle cx="17" cy="29" r="3"/><circle cx="31" cy="17" r="2.5"/><circle cx="33" cy="31" r="2.5"/><circle cx="21" cy="16" r="2"/><path d="M19.5 27l9.5-8.5M20 29.5l10.5 1.2M18 26.2l2.4-8.3"/>'
     };
     var badgeHost = $('[data-badges]', host);
     badgeHost.innerHTML = achievements.map(function (a) {
@@ -761,6 +1082,20 @@
         '<span>' + esc(a.def.name) + '</span></button>';
     }).join('');
     $('[data-badge-count]', host).textContent = achievements.filter(function (a) { return a.unlocked; }).length + ' / ' + achievements.length;
+    // A travessia desbloqueia o Network Effect ao vivo.
+    document.addEventListener('ss:network-unlocked', function () {
+      progress.crossed = true;
+      achievements = game.evaluateAchievements(progress, stats);
+      var a = achievements.find(function (x) { return x.def.id === 'network-effect'; });
+      var b = $('[data-badge="network-effect"]', badgeHost);
+      if (b && a.unlocked) {
+        b.classList.add('is-unlocked', 'just-unlocked');
+        b.setAttribute('aria-label', a.def.name + ': ' + a.def.desc + ' Desbloqueada.');
+      }
+      var count = achievements.filter(function (x) { return x.unlocked; }).length + ' / ' + achievements.length;
+      $('[data-badge-count]', host).textContent = count;
+      if (prof) $('[data-chip="badges"]', prof).textContent = count;
+    });
     function badgeTip(el) {
       var a = achievements.find(function (x) { return x.def.id === el.getAttribute('data-badge'); });
       showFloat(el, '<b>' + esc(a.def.name) + '</b>' + esc(a.def.desc) + (a.unlocked ? '' : ' (bloqueada)'));

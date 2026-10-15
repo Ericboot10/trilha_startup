@@ -58,7 +58,8 @@
       challenges: progress.completedChallenges.length,
       interviewChallenges: interview,
       projects: progress.projects,
-      longestStreak: stats.longest
+      longestStreak: stats.longest,
+      crossed: !!progress.crossed
     };
     return SS.ACHIEVEMENTS.map(function (a) {
       return { def: a, unlocked: !!a.test(s) };
