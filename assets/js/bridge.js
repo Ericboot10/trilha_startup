@@ -164,7 +164,38 @@
       landmass(2050, -80, 560, 900, [16, 44, 80, 118, 160, 205, 245], 35, 0.6)
     ];
 
-    return { boxes: boxes, cables: cables, hangers: hangers, lamps: lamps, ridges: ridges, land: land };
+    /* Network Effect: nós sobre os terraços de Marin, no lado voltado para a ponte.
+       Cada nó se liga ao vizinho mais próximo que está mais perto da cabeceira,
+       formando uma árvore que "sobe" os degraus a partir do fim do tabuleiro. */
+    var net = (function () {
+      var mass = land[1], seed = 5, pts = [[G.X_END - 6, G.DECK_Y + 1.5, 0]];
+      function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+      function edge(k, a) { return (1 - k * 0.13) * (1 + 0.07 * Math.sin(3 * a + 0.6 + k) + 0.04 * Math.sin(7 * a + 1.2)); }
+      mass.forEach(function (t, k) {
+        var top = k === mass.length - 1, cnt = top ? 4 : 9 - k;
+        for (var i = 0; i < cnt; i++) {
+          var a = (130 + (i + 0.15 + rnd() * 0.7) / cnt * 120) * Math.PI / 180;
+          var outer = edge(k, a), inner = top ? 0 : edge(k + 1, a);
+          var g = inner + (outer - inner) * (top ? 0.2 + rnd() * 0.5 : 0.3 + rnd() * 0.4);
+          pts.push([t.c[0] + Math.cos(a) * 560 * g, t.hi + 0.6, t.c[1] + Math.sin(a) * 900 * g]);
+        }
+      });
+      var root = pts[0];
+      function d(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]); }
+      pts.sort(function (a, b) { return d(a, root) - d(b, root); });
+      var nodes = pts.map(function (p) { return { p: p, parent: -1, at: 0 }; }), max = 1;
+      for (var k = 1; k < nodes.length; k++) {
+        var best = 0, bd = Infinity;
+        for (var j = 0; j < k; j++) { var dd = d(nodes[j].p, nodes[k].p); if (dd < bd) { bd = dd; best = j; } }
+        nodes[k].parent = best;
+        nodes[k].at = nodes[best].at + bd;
+        max = Math.max(max, nodes[k].at);
+      }
+      nodes.forEach(function (n) { n.at /= max; });
+      return nodes;
+    })();
+
+    return { boxes: boxes, cables: cables, hangers: hangers, lamps: lamps, ridges: ridges, land: land, net: net };
   })();
 
   /* ---------- recorte no plano próximo ---------- */
@@ -200,7 +231,7 @@
     }, opts || {});
     this.P = PAL.dark;
     this.theme = 'dark';
-    this.state = { fogBoost: 0, revealX: Infinity, lit: 0, highlight: -1, path: 0, glow: -1, glowAmt: 1, frontier: null, twinkle: -1 };
+    this.state = { fogBoost: 0, revealX: Infinity, lit: 0, highlight: -1, path: 0, glow: -1, glowAmt: 1, frontier: null, twinkle: -1, net: null };
     this.cam = null;
     this.resize();
   }
@@ -531,6 +562,7 @@
 
 
     if (o.land) this.drawLand();
+    if (st.net != null) this.drawNetwork();
 
     this.draw(this.collect(false), 1);
 
@@ -612,6 +644,100 @@
         }
       }
     }
+  };
+
+  /* Rede sobre os terraços: congelada em cinza (net < 0) ou acendendo em vermelho
+     a partir da cabeceira da ponte (net de 0 a 1). Ignora a névoa da travessia. */
+  BridgeView.prototype.drawNetwork = function () {
+    var ctx = this.ctx, P = this.P, o = this.o, prog = this.state.net, N = GEO.net, self = this;
+    var live = prog >= 0;
+    var pr = N.map(function (n) { return self.project(n.p); });
+    function fogOf(p) { return clamp((p.z - o.fogStart) / (o.fogEnd - o.fogStart), 0, 1) * o.fogMax * 0.6; }
+    ctx.lineCap = 'round';
+
+    // Onda que sai da cabeceira e sobe os terraços.
+    if (live && prog < 1) {
+      var R = prog * 1100, ring = [];
+      for (var s = 0; s <= 48; s++) {
+        var an = s / 48 * 6.2832, q = this.project([N[0].p[0] + Math.cos(an) * R, G.DECK_Y + 2, Math.sin(an) * R * 1.4]);
+        if (q) ring.push(q);
+      }
+      if (ring.length > 2) {
+        ctx.globalAlpha = (1 - prog) * 0.5;
+        ctx.strokeStyle = css(P.red);
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ring.forEach(function (q, i) { if (i) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); });
+        ctx.stroke();
+      }
+    }
+
+    // Arestas: tracejado cinza por baixo, luz vermelha percorrendo do pai ao filho.
+    var i, n, a, b;
+    ctx.setLineDash([3, 4]);
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.6;
+    for (i = 1; i < N.length; i++) {
+      n = N[i]; a = pr[n.parent]; b = pr[i];
+      if (!a || !b || (live && prog >= n.at)) continue;
+      ctx.strokeStyle = css(mixc(P.locked, P.fog, fogOf(b)));
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    if (live) {
+      for (i = 1; i < N.length; i++) {
+        n = N[i]; a = pr[n.parent]; b = pr[i];
+        var pa = N[n.parent].at;
+        if (!a || !b || prog <= pa) continue;
+        var f = clamp((prog - pa) / Math.max(0.001, n.at - pa), 0, 1);
+        var x = a.x + (b.x - a.x) * f, y = a.y + (b.y - a.y) * f, col = css(mixc(P.red, P.fog, fogOf(b)));
+        if (P.glow) {
+          ctx.globalAlpha = 0.18; ctx.strokeStyle = col; ctx.lineWidth = 4;
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(x, y); ctx.stroke();
+        }
+        ctx.globalAlpha = 0.9; ctx.strokeStyle = col; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(x, y); ctx.stroke();
+      }
+    }
+
+    // Nós.
+    for (i = 0; i < N.length; i++) {
+      var p = pr[i];
+      if (!p) continue;
+      var r = clamp(p.scale * (i ? 3.4 : 5), i ? 1.6 : 3, i ? 4.2 : 6), fog = fogOf(p);
+      var on = live && prog >= N[i].at;
+      if (!on) {
+        ctx.globalAlpha = 0.95;
+        ctx.fillStyle = css(mixc(P.locked, P.fog, fog));
+        ctx.beginPath(); ctx.arc(p.x, p.y, r * 0.8, 0, 6.283); ctx.fill();
+        continue;
+      }
+      var age = (prog - N[i].at) / 0.08, pop = prog < 1 && age < 1 ? 1 + 0.9 * Math.sin(age * Math.PI) : 1;
+      var red = css(mixc(P.red, P.fog, fog));
+      ctx.globalAlpha = P.glow ? 0.24 : 0.16;
+      ctx.fillStyle = red;
+      ctx.beginPath(); ctx.arc(p.x, p.y, r * 3.4 * pop, 0, 6.283); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.beginPath(); ctx.arc(p.x, p.y, r * pop, 0, 6.283); ctx.fill();
+      ctx.fillStyle = css(mixc(P.lamp, P.fog, fog));
+      ctx.beginPath(); ctx.arc(p.x, p.y, r * 0.38 * pop, 0, 6.283); ctx.fill();
+    }
+    // Cabeceira: anel de origem.
+    if (pr[0]) {
+      ctx.globalAlpha = live ? 0.85 : 0.6;
+      ctx.strokeStyle = css(live ? P.red : P.locked);
+      ctx.lineWidth = 1;
+      if (!live) ctx.setLineDash([2, 3]);
+      ctx.beginPath(); ctx.arc(pr[0].x, pr[0].y, clamp(pr[0].scale * 12, 7, 16), 0, 6.283); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.globalAlpha = 1;
+  };
+
+  /* Ponto do topo dos terraços de Marin (para o rótulo da conquista). */
+  SS.netSummit = function () {
+    var t = GEO.land[1][GEO.land[1].length - 1];
+    return [t.c[0], t.hi + 2, t.c[1]];
   };
 
   SS.BridgeView = BridgeView;

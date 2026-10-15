@@ -245,6 +245,14 @@ a { color: inherit; text-decoration: none; }
 .hero__scroll:hover { color: var(--text); }
 .hero__scroll span { display: inline-block; margin-left: 6px; animation: nudge 2.4s var(--ease-io) infinite; }
 @keyframes nudge { 50% { transform: translateY(3px); } }
+.hero__live {
+  position: absolute; z-index: 2; left: 0; right: 0; bottom: 30px; width: max-content; margin: 0 auto;
+  display: flex; align-items: center; gap: 8px; color: var(--text-3); font-size: 10px; letter-spacing: .14em;
+}
+.hero__live span { color: var(--text-2); transition: color .6s; }
+.hero__live.is-bump span { color: var(--text); transition: none; }
+.hero__live i { position: relative; width: 6px; height: 6px; border-radius: 50%; background: var(--red); }
+.hero__live i::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--red); animation: cpPulse 2.6s var(--ease-out) infinite; }
 .hero__coords { position: absolute; z-index: 2; right: var(--gutter); bottom: 30px; text-align: right; color: var(--text-2); line-height: 1.8; letter-spacing: .14em; }
 
 .hero__annot {
@@ -271,6 +279,7 @@ a { color: inherit; text-decoration: none; }
       linear-gradient(180deg, rgba(var(--scrim-rgb), .55) 0%, rgba(var(--scrim-rgb), 0) 14%);
   }
   .hero__coords { display: none; }
+  .hero__live { left: var(--gutter); right: auto; bottom: 56px; margin: 0; }
   .hero__annot { display: none; }
   .fog--a { top: 36%; }
   .fog--b { top: 46%; }
@@ -279,7 +288,7 @@ a { color: inherit; text-decoration: none; }
 /* =========================================================
    02 · A travessia
    ========================================================= */
-.crossing { position: relative; height: 340vh; background: var(--bg); }
+.crossing { position: relative; height: 390vh; background: var(--bg); }
 .crossing__sticky { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; isolation: isolate; }
 .crossing__sticky::after {
   content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
@@ -392,7 +401,7 @@ a { color: inherit; text-decoration: none; }
 .readout__bar i { position: absolute; inset: 0; background: var(--red); transform-origin: 0 50%; transform: scaleX(var(--r, .05)); }
 
 @media (max-width: 760px) {
-  .crossing { height: 300vh; }
+  .crossing { height: 350vh; }
   .crossing__head { top: calc(var(--nav-h) + 8px); }
   .crossing__head h2 { font-size: 27px; margin: 12px 0 8px; }
   .crossing__head p { font-size: 14.5px; }
@@ -406,79 +415,15 @@ a { color: inherit; text-decoration: none; }
   .cp-tip { display: none; }
 }
 
+.crossing .crossing__toast { top: calc(var(--nav-h) + 4vh); bottom: auto; right: var(--gutter); }
+.net-label .net-label__count { display: block; margin-top: 2px; color: var(--text-2); font-weight: 400; }
+.net-label.is-fogged b { opacity: .5; }
 .readout__goal { margin-top: 6px; display: inline-flex; align-items: center; gap: 8px; color: var(--text-3); font-size: 10px; }
 .readout__goal::before { content: ""; width: 7px; height: 7px; border: 1px solid currentColor; transform: rotate(45deg); }
-.readout__goal.is-ready { color: var(--gold); }
-.readout__goal.is-ready::before { background: var(--gold); box-shadow: 0 0 10px var(--gold); }
-.readout__goal.is-done { color: var(--text-2); }
+.readout__goal.is-ready { color: var(--red); }
+.readout__goal.is-ready::before { background: var(--red); box-shadow: 0 0 10px var(--red); }
+.readout__goal.is-done { color: var(--text); }
 .readout__goal.is-done::before { background: var(--red); border-color: var(--red); }
-
-/* =========================================================
-   Do outro lado da ponte — Network Effect
-   ========================================================= */
-:root, [data-theme="dark"] { --gold: #F5B942; --gold-rgb: 245, 185, 66; }
-[data-theme="light"] { --gold: #B97A0E; --gold-rgb: 185, 122, 14; }
-
-.network { position: relative; height: 220vh; background: var(--bg); }
-.network__sticky { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; isolation: isolate; }
-.network__canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.network__sticky::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
-  background:
-    linear-gradient(180deg, rgba(var(--scrim-rgb), .9) 0%, rgba(var(--scrim-rgb), 0) 30%),
-    linear-gradient(0deg, rgba(var(--scrim-rgb), .85) 0%, rgba(var(--scrim-rgb), 0) 24%);
-}
-.network__head { position: absolute; z-index: 3; top: calc(var(--nav-h) + 4vh); left: var(--gutter); max-width: 560px; will-change: transform; }
-.network__head h2 { font-size: clamp(30px, 3.7vw, 54px); line-height: 1.02; letter-spacing: -.04em; font-weight: 500; margin: 18px 0 14px; }
-.network__head p:not(.eyebrow) { color: var(--text-2); font-size: clamp(15px, 1.2vw, 18px); max-width: 420px; }
-
-.network__lock {
-  position: absolute; z-index: 3; right: var(--gutter); top: calc(var(--nav-h) + 4vh);
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap; max-width: 340px; padding: 14px 16px;
-  border: 1px dashed var(--border-2); border-radius: var(--r-3);
-  background: rgba(var(--surface-rgb), .6); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-  transition: opacity .6s var(--ease-out), transform .6s var(--ease-out);
-}
-.network__lock svg { width: 22px; height: 22px; fill: none; stroke: var(--text-2); stroke-width: 1.5; stroke-linecap: round; flex: none; }
-.network__lock .mono { color: var(--text-2); font-size: 10px; }
-.network__lock p:not(.mono) { font-size: 14px; color: var(--text); margin-top: 2px; }
-.network__lock .btn { padding: 8px 14px; font-size: 13px; }
-.network.is-live .network__lock { opacity: 0; transform: translateY(-8px) scale(.97); pointer-events: none; }
-
-.network__you {
-  position: absolute; left: 0; top: 0; z-index: 3; padding: 4px 8px; white-space: nowrap; font-size: 10px;
-  color: var(--text-3); border: 1px solid var(--border-2); border-radius: var(--r-2); background: rgba(var(--surface-rgb), .7);
-  transition: color .6s, border-color .6s; pointer-events: none; will-change: transform;
-}
-.network.is-live .network__you { color: var(--text); border-color: rgba(var(--red-rgb), .6); }
-
-.network__stats {
-  position: absolute; z-index: 3; left: var(--gutter); right: var(--gutter); bottom: clamp(24px, 5vh, 52px); margin: 0;
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; max-width: 920px;
-}
-.network__stats > div { padding-top: 12px; border-top: 1px solid var(--border-2); transition: border-color .8s; }
-.network__stats dt { color: var(--text-2); font-size: 10px; }
-.network__stats dd { margin: 6px 0 2px; font-size: clamp(26px, 2.6vw, 38px); font-weight: 500; letter-spacing: -.03em; font-variant-numeric: tabular-nums; color: var(--text-3); transition: color .8s; }
-.net__delta { font-size: 10px; color: var(--text-3); }
-.network.is-live .network__stats > div { border-top-color: rgba(var(--red-rgb), .5); }
-.network.is-live .network__stats > div:nth-child(n+3) { border-top-color: rgba(var(--gold-rgb), .5); }
-.network.is-live .network__stats dd { color: var(--text); }
-.network.is-live .net__delta { color: var(--gold); }
-
-.network .network__toast { top: calc(var(--nav-h) + 4vh); bottom: auto; right: var(--gutter); }
-
-@media (max-width: 760px) {
-  .network { height: 200vh; }
-  .network__head { top: calc(var(--nav-h) + 8px); }
-  .network__head h2 { font-size: 27px; margin: 12px 0 8px; }
-  .network__head p:not(.eyebrow) { font-size: 14.5px; }
-  .network__lock { top: auto; bottom: 198px; left: var(--gutter); right: var(--gutter); max-width: none; padding: 12px 14px; }
-  .network__stats { grid-template-columns: 1fr 1fr; gap: 10px 18px; bottom: 14px; }
-  .network__stats > div { padding-top: 8px; }
-  .network__stats dt, .net__delta { font-size: 9px; }
-  .network__stats dd { font-size: 22px; margin: 2px 0 0; }
-  .network .network__toast { top: auto; bottom: 12px; right: 12px; }
-}
 
 /* =========================================================
    A trilha completa
