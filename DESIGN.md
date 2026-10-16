@@ -31,7 +31,8 @@ Valores de referência: `assets/css/styles.css`.
 
 - **Clicável:** botão primário, links, checkpoints disponíveis na ponte Golden Gate, controles, foco.
 - **Progresso / ativo:** barras de avanço, rastro percorrido, item atual, conquistas, calendário de contribuições.
-- **Neutro:** eyebrows, bordas de citação, ênfase em títulos, rótulos informativos, estados futuros ou bloqueados.
+- **Aula acesa na trilha:** o avatar do professor ganha borda, brilho e pulso vermelhos quando a aula é alcançada. É o sinal de progresso mais visível da trilha.
+- **Neutro:** eyebrows, bordas de citação, ênfase em títulos, rótulos informativos, estados futuros ou bloqueados e a anotação do hero ("TORRE SUL"), incluindo o ponto e a linha dela.
 
 Teste: *isto convida a clicar ou mostra que algo avançou?* Se não, não é vermelho, salvo a cor original da ponte Golden Gate que se mantém na cor vermelha. 
 
