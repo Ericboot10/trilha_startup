@@ -62,6 +62,5 @@ Números de métrica usam `tabular-nums`. Em mobile os títulos descem para 26�
 
 - **Botão primário:** fundo `--red`, texto `#fff`, hover `--red-2`. O ghost é neutro: o vermelho fica para a ação principal.
 - **Checkpoint:** disponível = vermelho com pulso; concluído = vermelho sólido; bloqueado = `--text-3`.
-- **Card atual:** borda `--red`; os demais usam `--border`.
 - **Badge:** desbloqueado = moldura vermelha sólida; bloqueado = tracejada `--text-3`.
 - **Foco:** `outline: 2px solid var(--red); outline-offset: 3px`.
