@@ -2,9 +2,9 @@
    STARTUP SCHOOL — Design tokens
    ========================================================= */
 :root {
-  --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --font-serif: Georgia, "Times New Roman", serif;
+  --font: "Times New Roman", Times, serif;
+  --mono: "Times New Roman", Times, serif;
+  --font-serif: "Times New Roman", Times, serif;
 
   --ease-out: cubic-bezier(.16, 1, .3, 1);
   --ease-io: cubic-bezier(.65, 0, .35, 1);
