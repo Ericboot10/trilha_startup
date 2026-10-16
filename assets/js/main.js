@@ -186,7 +186,7 @@
       if (annot) {
         var p = view.project([0, G.TOWER_H - 30, -G.CABLE_Z - 6]);
         var on = p && intro > 1.6 && p.x > view.w * 0.55 && p.y > 70;
-        if (p) annot.style.transform = 'translate(' + (p.x - p.scale * 14 - 24).toFixed(1) + 'px,' + p.y.toFixed(1) + 'px) translateX(-100%)';
+        if (p) annot.style.transform = 'translate(' + (p.x - p.scale * 14 - 44).toFixed(1) + 'px,' + p.y.toFixed(1) + 'px) translateX(-100%)';
         annot.classList.toggle('is-on', !!on && sp < 0.25);
       }
       return anim;

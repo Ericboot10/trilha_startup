@@ -251,10 +251,10 @@ a { color: inherit; text-decoration: none; }
 .hero__annot {
   position: absolute; z-index: 1; left: 0; top: 0; pointer-events: none;
   display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding-right: 14px; color: var(--text-2); font-size: 10px; letter-spacing: .16em;
-  border-right: 1px solid rgba(var(--red-rgb), .7); white-space: nowrap;
+  border-right: 1px solid var(--text-3); white-space: nowrap;
   opacity: 0; transition: opacity 1s var(--ease-out);
 }
-.hero__annot::before { content: ""; position: absolute; right: -3px; top: -3px; width: 5px; height: 5px; border-radius: 50%; background: var(--red); }
+.hero__annot::before { content: ""; position: absolute; right: -3px; top: -3px; width: 5px; height: 5px; border-radius: 50%; background: var(--text-2); }
 .hero__annot.is-on { opacity: 1; }
 .hero__annot span:first-child { color: var(--text); }
 
@@ -815,11 +815,9 @@ body { font-feature-settings: "ss01", "cv11"; text-rendering: optimizeLegibility
 }
 .tnode__avatar img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; filter: grayscale(1) brightness(.8); transition: filter .6s; }
 .tnode__avatar b { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .04em; color: var(--text-3); transition: color .5s; }
-.tnode.is-lit .tnode__avatar { border-color: var(--red); box-shadow: 0 0 0 3px rgba(var(--red-rgb), .14), 0 0 16px rgba(var(--red-rgb), .5); }
+.tnode.is-lit .tnode__avatar { border-color: var(--text-2); }
 .tnode.is-lit .tnode__avatar img { filter: none; }
-.tnode.is-lit .tnode__avatar b { color: var(--red); }
-.tnode.just-lit .tnode__avatar { animation: avatarLit 1.1s var(--ease-out); }
-@keyframes avatarLit { 0% { box-shadow: 0 0 0 0 rgba(var(--red-rgb), .7); } 100% { box-shadow: 0 0 0 14px rgba(var(--red-rgb), 0); } }
+.tnode.is-lit .tnode__avatar b { color: var(--text); }
 
 .footer__credits { margin-top: 8px; font-size: 12px; color: var(--text-3); }
 .footer__credits a { text-decoration: underline; text-underline-offset: 2px; }
