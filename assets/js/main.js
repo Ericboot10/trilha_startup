@@ -200,24 +200,6 @@
   })();
   if (hero) scenes.push(hero);
 
-  /* Contador fictício de founders na rede — sobe devagar enquanto a página está aberta. */
-  var foundersN = 12483, foundersFmt = new Intl.NumberFormat('pt-BR');
-  function renderFounders() {
-    $$('[data-founders]').forEach(function (el) { el.textContent = foundersFmt.format(foundersN); });
-  }
-  (function nextFounder() {
-    setTimeout(function () {
-      if (!reduced() && !document.hidden) {
-        foundersN++;
-        renderFounders();
-        $$('.hero__live').forEach(function (el) {
-          el.classList.remove('is-bump'); void el.offsetWidth; el.classList.add('is-bump');
-        });
-      }
-      nextFounder();
-    }, 2600 + Math.random() * 3400);
-  })();
-
   /* =========================================================
      02 · A travessia
      ========================================================= */
@@ -241,11 +223,9 @@
     function setGoal() {
       goal.textContent = 'Network Effect · ' + (netUnlocked ? 'desbloqueado' : 'bloqueado');
       goal.classList.toggle('is-done', netUnlocked);
-      netLabel.innerHTML = 'Conquista · ' + (netUnlocked ? 'desbloqueada' : 'bloqueada') + '<b>Network Effect</b>' +
-        (netUnlocked ? '<span class="net-label__count"><span data-founders></span> founders conectados</span>' : '');
+      netLabel.innerHTML = 'Conquista · ' + (netUnlocked ? 'desbloqueada' : 'bloqueada') + '<b>Network Effect</b>';
       netLabel.classList.toggle('is-current', netUnlocked);
       netLabel.classList.toggle('is-fogged', !netUnlocked);
-      renderFounders();
     }
     function unlockNetwork(t) {
       netUnlocked = true;
