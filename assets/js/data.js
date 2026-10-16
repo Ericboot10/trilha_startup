@@ -119,8 +119,6 @@
       test: function (s) { return s.challenges >= 8; } },
     { id: 'consistency', name: 'CONSISTENCY', desc: 'Mantenha uma sequência de sete dias ativos.', quote: 'Sete dias seguidos construindo algo real.', icon: 'streak',
       test: function (s) { return s.longestStreak >= 7; } },
-    { id: 'network-effect', name: 'NETWORK EFFECT', desc: 'Cruze a ponte até o fim da travessia.', quote: 'Você cruzou a ponte. Agora a rede cresce com você.', icon: 'network',
-      test: function (s) { return s.crossed; } },
     { id: 'zero-to-one', name: 'ZERO TO ONE', desc: 'Conclua toda a jornada educacional.', quote: 'Do zero ao primeiro passo de verdade.', icon: 'one',
       test: function (s) { return s.lessons >= 20; } }
   ];

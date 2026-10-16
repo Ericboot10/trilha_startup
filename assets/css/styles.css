@@ -284,7 +284,7 @@ a { color: inherit; text-decoration: none; }
 /* =========================================================
    02 · A travessia
    ========================================================= */
-.crossing { position: relative; height: 390vh; background: var(--bg); }
+.crossing { position: relative; height: 340vh; background: var(--bg); }
 .crossing__sticky { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; isolation: isolate; }
 .crossing__sticky::after {
   content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
@@ -397,7 +397,7 @@ a { color: inherit; text-decoration: none; }
 .readout__bar i { position: absolute; inset: 0; background: var(--red); transform-origin: 0 50%; transform: scaleX(var(--r, .05)); }
 
 @media (max-width: 760px) {
-  .crossing { height: 350vh; }
+  .crossing { height: 300vh; }
   .crossing__head { top: calc(var(--nav-h) + 8px); }
   .crossing__head h2 { font-size: 27px; margin: 12px 0 8px; }
   .crossing__head p { font-size: 14.5px; }
@@ -410,15 +410,6 @@ a { color: inherit; text-decoration: none; }
   .stage-label:not(.is-current) { opacity: 0 !important; }
   .cp-tip { display: none; }
 }
-
-.crossing .crossing__toast { top: calc(var(--nav-h) + 4vh); bottom: auto; right: var(--gutter); }
-.net-label.is-fogged b { opacity: .5; }
-.readout__goal { margin-top: 6px; display: inline-flex; align-items: center; gap: 8px; color: var(--text-3); font-size: 10px; }
-.readout__goal::before { content: ""; width: 7px; height: 7px; border: 1px solid currentColor; transform: rotate(45deg); }
-.readout__goal.is-ready { color: var(--red); }
-.readout__goal.is-ready::before { background: var(--red); box-shadow: 0 0 10px var(--red); }
-.readout__goal.is-done { color: var(--text); }
-.readout__goal.is-done::before { background: var(--red); border-color: var(--red); }
 
 /* =========================================================
    A trilha completa
@@ -587,7 +578,7 @@ p.learn__ex.mono { color: var(--text-2) !important; font-size: 11px; }
 .passport__grid { grid-template-areas: "level streak" "journey badges"; }
 .pcard--level { grid-area: level; } .pcard--streak { grid-area: streak; } .pcard--badges { grid-area: badges; } .pcard--journey { grid-area: journey; }
 
-.badges { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; margin-top: 20px; }
+.badges { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 20px; }
 .badge {
   position: relative; display: grid; justify-items: center; gap: 12px; padding: 18px 6px 14px;
   border: 1px solid var(--border); border-radius: var(--r-2); background: var(--bg-2); cursor: default;
@@ -644,7 +635,7 @@ p.learn__ex.mono { color: var(--text-2) !important; font-size: 11px; }
 @media (max-width: 640px) {
   .passport__grid { grid-template-columns: 1fr; grid-template-areas: "level" "journey" "streak" "badges"; }
   .pcard { padding: 22px 18px; }
-  .badges { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .badges { grid-template-columns: repeat(3, 1fr); }
   .stats { gap: 20px; }
   .stats dd b { font-size: 24px; }
   .toast { right: 12px; bottom: 12px; width: calc(100% - 24px); }

@@ -203,10 +203,6 @@
   /* =========================================================
      02 · A travessia
      ========================================================= */
-  // Conquista "Network Effect": revelar os 20 checkpoints acende a rede nos terraços de Marin.
-  var NET_KEY = 'ss-network-effect';
-  var netUnlocked = (function () { try { return localStorage.getItem(NET_KEY) === '1'; } catch (e) { return false; } })();
-
   var crossing = (function () {
     var section = $('#travessia');
     var canvas = $('.crossing__canvas', section);
@@ -215,29 +211,6 @@
     var tip = $('.cp-tip', section), fogline = $('.crossing__fogline', section), panel = $('.crossing__panel', section);
     var readout = $('[data-readout]', section), readBar = $('.readout__bar', section);
     var fogs = $$('.crossing__fog', section);
-    var goal = $('[data-goal]', section), toast = $('[data-net-toast]', section);
-    var netLabel = document.createElement('div');
-    netLabel.className = 'stage-label net-label';
-    labelsEl.appendChild(netLabel);
-    var netT0 = -1; // instante do desbloqueio nesta visita (-1 = já estava desbloqueada ou ainda congelada)
-    function setGoal() {
-      goal.textContent = 'Network Effect · ' + (netUnlocked ? 'desbloqueado' : 'bloqueado');
-      goal.classList.toggle('is-done', netUnlocked);
-      netLabel.innerHTML = 'Conquista · ' + (netUnlocked ? 'desbloqueada' : 'bloqueada') + '<b>Network Effect</b>';
-      netLabel.classList.toggle('is-current', netUnlocked);
-      netLabel.classList.toggle('is-fogged', !netUnlocked);
-    }
-    function unlockNetwork(t) {
-      netUnlocked = true;
-      netT0 = t;
-      try { localStorage.setItem(NET_KEY, '1'); } catch (e) { /* armazenamento indisponível */ }
-      setGoal();
-      document.dispatchEvent(new CustomEvent('ss:network-unlocked'));
-      setTimeout(function () {
-        toast.classList.add('is-on');
-        setTimeout(function () { toast.classList.remove('is-on'); }, 5200);
-      }, reduced() ? 0 : 1400);
-    }
     var view = new SS.BridgeView(canvas, { drawCheckpoints: false, land: true, checkpointZ: 0, fogStart: 1100, fogEnd: 6200, fogMax: 0.8, lowFog: 0.4 });
     view.setTheme(currentTheme());
     var visible = false, pS = 0, lastKey = '', selected = 0, hovered = -1, revealX = -Infinity;
@@ -346,26 +319,22 @@
       cur[0] += (mouse[0] - cur[0]) * k;
       cur[1] += (mouse[1] - cur[1]) * k;
 
-      // Últimos 16% do scroll: chegada a Marin — a névoa se abre sobre os terraços da rede.
-      var pB = clamp(pS / 0.84, 0, 1), arrive = sstep(0.84, 1, pS);
-      revealX = lerp(G.X_START + 250, G.X_END + 300, sstep(0.02, 0.94, pB)) + arrive * 1100;
+      revealX = lerp(G.X_START + 250, G.X_END + 300, sstep(0.02, 0.94, pS));
       var glow = hovered >= 0 ? hovered : selected;
-      var net = !netUnlocked ? -1 : netT0 < 0 || rm ? 1 : clamp((t - netT0) / 2.8, 0, 1);
-      var anim = !rm && (Math.abs(p - pS) > 0.0004 || Math.abs(mouse[0] - cur[0]) + Math.abs(mouse[1] - cur[1]) > 0.001 || (net >= 0 && net < 1));
-      var key = [pS.toFixed(4), cur[0].toFixed(3), cur[1].toFixed(3), glow, view.theme, view.w, view.h, net.toFixed(3)].join('|');
+      var anim = !rm && (Math.abs(p - pS) > 0.0004 || Math.abs(mouse[0] - cur[0]) + Math.abs(mouse[1] - cur[1]) > 0.001);
+      var key = [pS.toFixed(4), cur[0].toFixed(3), cur[1].toFixed(3), glow, view.theme, view.w, view.h].join('|');
       if (key === lastKey) return anim;
       lastKey = key;
 
       // Câmera de travessia: desce e avança ao longo da ponte, com um leve arco.
       var c = byAspect(view.w, view.h, CAMS.crossing.wide, CAMS.crossing.tall);
-      var e = easeInOut(pB), arc = Math.sin(pB * Math.PI), ar = easeInOut(arrive);
-      var pos = V.add(c.pos, [e * 640 + ar * 420 + cur[0] * 40, -e * 150 - arc * 30 + ar * 40 - cur[1] * 20, -e * 420 + ar * 260 + arc * 120]);
-      var tgt = V.add(c.target, [e * 760 + ar * 900 + cur[0] * 60, e * 10 + ar * 70 - cur[1] * 12, -arc * 40]);
+      var e = easeInOut(pS), arc = Math.sin(pS * Math.PI);
+      var pos = V.add(c.pos, [e * 640 + cur[0] * 40, -e * 150 - arc * 30 - cur[1] * 20, -e * 420 + arc * 120]);
+      var tgt = V.add(c.target, [e * 760 + cur[0] * 60, e * 10 - cur[1] * 12, -arc * 40]);
       view.setCamera(pos, tgt, c.fov - arc * 2);
       view.state.revealX = revealX;
       view.state.frontier = revealX < G.X_END ? clamp(revealX + 40, G.X_START, G.X_END) : null;
       view.state.glow = glow;
-      view.state.net = net;
       view.render();
       fogs.forEach(function (f, i) {
         f.style.transform = 'translate3d(' + (-(pS * (i ? 34 : 22)) - cur[0] * (i ? 2 : 1)).toFixed(2) + '%,' + (pS * (i ? -40 : 30)).toFixed(1) + 'px,0)';
@@ -375,14 +344,14 @@
       var revealed = 0;
       btns.forEach(function (b, i) {
         var x = SS.checkpointX(i);
-        var fogged = x > revealX + 40;
-        if (!fogged) revealed++;
         var pr = view.project([x, G.DECK_Y + 1.5, 0]);
         b._p = pr;
         if (!pr) { b.classList.add('is-hidden'); return; }
         b.classList.remove('is-hidden');
         b.style.transform = 'translate(' + pr.x.toFixed(1) + 'px,' + pr.y.toFixed(1) + 'px)';
         b.classList.add('is-placed');
+        var fogged = x > revealX + 40;
+        if (!fogged) revealed++;
         if (b._f !== fogged) {
           if (b._f === true && !fogged && !reduced()) {
             b.classList.add('just-revealed');
@@ -405,28 +374,14 @@
       });
       placeTip();
 
-      // Na chegada, o painel da missão sai de cena para a conquista ficar à vista.
-      var pf = 1 - sstep(0.15, 0.6, arrive);
-      panel.style.opacity = pf.toFixed(3);
-      panel.style.transform = 'translateY(' + ((1 - pf) * 24).toFixed(1) + 'px)';
-      panel.style.visibility = pf < 0.02 ? 'hidden' : '';
       fogline.style.opacity = (sstep(0.14, 0.26, pS) * (1 - sstep(0.5, 0.62, pS))).toFixed(3);
       fogline.style.transform = 'translateY(' + ((1 - sstep(0.14, 0.3, pS)) * 14).toFixed(1) + 'px)';
-      if (revealed === 20 && !netUnlocked) { unlockNetwork(t); lastKey = ''; anim = true; }
-      var sp = view.project(SS.netSummit());
-      if (sp) {
-        netLabel.style.opacity = '';
-        netLabel.style.height = '58px';
-        netLabel.style.transform = 'translate(' + clamp(sp.x, 12, view.w - netLabel.offsetWidth - 16).toFixed(1) + 'px,' + Math.max(view.h * 0.3, sp.y - 66).toFixed(1) + 'px)';
-        netLabel.classList.add('is-placed');
-      } else netLabel.style.opacity = '0';
       readout.textContent = pad2(revealed);
       readBar.style.setProperty('--r', (revealed / 20).toFixed(3));
       return anim;
     }
 
     select(0);
-    setGoal();
 
     return {
       tick: tick,
@@ -700,8 +655,7 @@
     var progress = {
       completedLessons: LESSONS.slice(0, 7).map(function (l) { return l.id; }),
       completedChallenges: LESSONS.slice(0, 5).map(function (l) { return l.id; }),
-      projects: 0,
-      crossed: netUnlocked
+      projects: 0
     };
 
     var stats = game.streakStats(activity, today);
@@ -797,8 +751,7 @@
       ship: '<path d="M16 27l8-8 8 8M16 34l8-8 8 8M24 13v6"/>',
       cube: '<path d="M24 13l10 5.8v11.4L24 36l-10-5.8V18.8z"/><path d="M24 24.6l10-5.8M24 24.6V36M24 24.6l-10-5.8"/>',
       streak: '<path d="M14 30h3v-4h-3zM19.5 30h3v-7h-3zM25 30h3v-10h-3zM30.5 30h3v-13h-3z"/>',
-      one: '<circle cx="19" cy="24" r="6"/><path d="M31 18v12M28.5 20l2.5-2"/>',
-      network: '<circle cx="17" cy="29" r="3"/><circle cx="31" cy="17" r="2.5"/><circle cx="33" cy="31" r="2.5"/><circle cx="21" cy="16" r="2"/><path d="M19.5 27l9.5-8.5M20 29.5l10.5 1.2M18 26.2l2.4-8.3"/>'
+      one: '<circle cx="19" cy="24" r="6"/><path d="M31 18v12M28.5 20l2.5-2"/>'
     };
     var badgeHost = $('[data-badges]', host);
     badgeHost.innerHTML = achievements.map(function (a) {
@@ -808,20 +761,6 @@
         '<span>' + esc(a.def.name) + '</span></button>';
     }).join('');
     $('[data-badge-count]', host).textContent = achievements.filter(function (a) { return a.unlocked; }).length + ' / ' + achievements.length;
-    // A travessia desbloqueia o Network Effect ao vivo.
-    document.addEventListener('ss:network-unlocked', function () {
-      progress.crossed = true;
-      achievements = game.evaluateAchievements(progress, stats);
-      var a = achievements.find(function (x) { return x.def.id === 'network-effect'; });
-      var b = $('[data-badge="network-effect"]', badgeHost);
-      if (b && a.unlocked) {
-        b.classList.add('is-unlocked', 'just-unlocked');
-        b.setAttribute('aria-label', a.def.name + ': ' + a.def.desc + ' Desbloqueada.');
-      }
-      var count = achievements.filter(function (x) { return x.unlocked; }).length + ' / ' + achievements.length;
-      $('[data-badge-count]', host).textContent = count;
-      if (prof) $('[data-chip="badges"]', prof).textContent = count;
-    });
     function badgeTip(el) {
       var a = achievements.find(function (x) { return x.def.id === el.getAttribute('data-badge'); });
       showFloat(el, '<b>' + esc(a.def.name) + '</b>' + esc(a.def.desc) + (a.unlocked ? '' : ' (bloqueada)'));
