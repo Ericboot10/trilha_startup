@@ -51,15 +51,15 @@
 
   var RAW = {
     dark: {
-      skyTop: '#030304', skyHorizon: '#14161b', waterHorizon: '#0e1014', water: '#050506',
+      skyTop: '#03040a', skyHorizon: '#161a26', waterHorizon: '#0e1118', water: '#05060a',
       fog: '#15171c', hills: '#0b0c0f', hillsFar: '#111216',
       bridge: '#D9463B', deck: '#A9352D', pier: '#26262a', lamp: '#FFD6A6', red: '#E5483D', locked: '#4a4b4f',
       land: '#2a2c32', landEdge: '#62666f',
       reflect: 0.22, glow: 1, lowFog: 0.55
     },
     light: {
-      skyTop: '#E6DFD3', skyHorizon: '#F6F2EB', waterHorizon: '#E2DBCE', water: '#CBC2B3',
-      fog: '#EEE8DE', hills: '#BDB2A1', hillsFar: '#D3C9BA',
+      skyTop: '#A9CBE6', skyHorizon: '#FCE4C2', waterHorizon: '#EBD9C0', water: '#C4C2B8',
+      fog: '#F2E7D8', hills: '#BDB2A1', hillsFar: '#D3C9BA',
       bridge: '#C83F35', deck: '#A5352C', pier: '#B3AA9D', lamp: '#FFFFFF', red: '#C83F35', locked: '#A39B90',
       land: '#D8D0C3', landEdge: '#F2EDE4',
       reflect: 0.16, glow: 0, lowFog: 0.6
@@ -498,6 +498,7 @@
       sky.addColorStop(1, css(P.skyHorizon));
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, w, hz + 1);
+      this.drawCelestial(hz);
     }
     if (hz < h) {
       var water = ctx.createLinearGradient(0, Math.max(0, hz), 0, h);
@@ -529,6 +530,8 @@
       ctx.restore();
     }
 
+
+    if (hz > 0 && hz < h) this.drawCelestialReflection(hz);
 
     if (o.land) this.drawLand();
 
@@ -569,6 +572,113 @@
     }
 
     if (st.twinkle >= 0) this.drawTwinkle(hz);
+  };
+
+  /* Posição do astro: sol nascendo colado no horizonte (claro) ou lua cheia alta no céu (escuro). */
+  BridgeView.prototype.celestialAt = function (hz) {
+    var w = this.w, h = this.h, light = this.theme === 'light';
+    var r = clamp(Math.min(w, h) * (light ? 0.055 : 0.05), 20, 58);
+    return {
+      light: light, r: r, x: w * (w < 760 ? 0.72 : 0.68),
+      y: light ? hz - r * 0.55 : Math.max(r * 1.6, hz * 0.3)
+    };
+  };
+
+  BridgeView.prototype.drawCelestial = function (hz) {
+    var ctx = this.ctx, P = this.P, st = this.state, w = this.w;
+    var c = this.celestialAt(hz), vis = 1 - st.fogBoost * 0.85;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, 0, w, hz + 1); ctx.clip();
+    var i, g, a;
+    if (!c.light) {
+      /* estrelas: posições determinísticas, mais fracas perto do horizonte */
+      for (i = 0; i < 140; i++) {
+        var rx = Math.sin(i * 12.9898 + 78.233) * 43758.5453, ry = Math.sin(i * 39.346 + 11.135) * 24634.6345, rs = Math.sin(i * 7.77 + 3.1) * 9301.7;
+        rx -= Math.floor(rx); ry -= Math.floor(ry); rs -= Math.floor(rs);
+        var sx = rx * w, sy = Math.pow(ry, 1.25) * hz * 0.94;
+        a = (0.25 + rs * 0.6) * (1 - sy / hz * 0.8) * vis;
+        if (st.twinkle >= 0) a *= 0.8 + 0.2 * Math.sin(st.twinkle * 1.7 + i * 2.3);
+        ctx.fillStyle = css([226, 232, 255], a);
+        var sz = rs > 0.93 ? 1.9 : rs > 0.6 ? 1.2 : 0.8;
+        ctx.fillRect(sx, sy, sz, sz);
+      }
+      /* sem lua no mobile: só as estrelas */
+      if (w < 760) { ctx.restore(); return; }
+      /* halo da lua */
+      var R = c.r * 7;
+      g = ctx.createRadialGradient(c.x, c.y, c.r * 0.8, c.x, c.y, R);
+      g.addColorStop(0, css([170, 190, 235], 0.26 * vis));
+      g.addColorStop(0.35, css([120, 145, 210], 0.09 * vis));
+      g.addColorStop(1, css([120, 145, 210], 0));
+      ctx.fillStyle = g; ctx.fillRect(c.x - R, c.y - R, R * 2, R * 2);
+      /* disco: lua cheia com mares e crateras suaves */
+      ctx.globalAlpha = vis;
+      var mg = ctx.createRadialGradient(c.x - c.r * 0.3, c.y - c.r * 0.3, c.r * 0.1, c.x, c.y, c.r);
+      mg.addColorStop(0, '#FBFCFF'); mg.addColorStop(1, '#D3D9E8');
+      ctx.fillStyle = mg;
+      ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2); ctx.fill();
+      ctx.save();
+      ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2); ctx.clip();
+      var spots = [[-0.32, -0.22, 0.34, 0.16], [0.28, -0.3, 0.22, 0.12], [0.1, 0.28, 0.4, 0.13], [-0.4, 0.3, 0.16, 0.1], [0.46, 0.12, 0.14, 0.1]];
+      for (i = 0; i < spots.length; i++) {
+        ctx.fillStyle = 'rgba(120,132,165,' + spots[i][3] + ')';
+        ctx.beginPath(); ctx.arc(c.x + spots[i][0] * c.r, c.y + spots[i][1] * c.r, spots[i][2] * c.r, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    } else {
+      /* brilho do amanhecer no horizonte */
+      var hg = ctx.createRadialGradient(c.x, hz, 0, c.x, hz, w * 0.7);
+      hg.addColorStop(0, css([255, 196, 130], 0.55 * vis));
+      hg.addColorStop(0.4, css([255, 214, 170], 0.2 * vis));
+      hg.addColorStop(1, css([255, 214, 170], 0));
+      ctx.save(); ctx.translate(0, hz); ctx.scale(1, 0.55); ctx.translate(0, -hz);
+      ctx.fillStyle = hg; ctx.fillRect(0, hz - w, w, w * 2);
+      ctx.restore();
+      /* raios de luz em leque */
+      ctx.globalAlpha = vis;
+      for (i = 0; i < 9; i++) {
+        var ang = -Math.PI / 2 + (i - 4) * 0.2, wd = 0.045, L = Math.max(w, hz) * 1.1;
+        var rg = ctx.createRadialGradient(c.x, c.y, c.r, c.x, c.y, L);
+        rg.addColorStop(0, 'rgba(255,236,190,0.22)'); rg.addColorStop(1, 'rgba(255,236,190,0)');
+        ctx.fillStyle = rg;
+        ctx.beginPath(); ctx.moveTo(c.x, c.y);
+        ctx.lineTo(c.x + Math.cos(ang - wd) * L, c.y + Math.sin(ang - wd) * L);
+        ctx.lineTo(c.x + Math.cos(ang + wd) * L, c.y + Math.sin(ang + wd) * L);
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      var R2 = c.r * 6;
+      g = ctx.createRadialGradient(c.x, c.y, c.r * 0.6, c.x, c.y, R2);
+      g.addColorStop(0, css([255, 214, 140], 0.7 * vis));
+      g.addColorStop(0.3, css([255, 200, 130], 0.22 * vis));
+      g.addColorStop(1, css([255, 200, 130], 0));
+      ctx.fillStyle = g; ctx.fillRect(c.x - R2, c.y - R2, R2 * 2, R2 * 2);
+      ctx.globalAlpha = vis;
+      var sg = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r);
+      sg.addColorStop(0, '#FFFBEA'); sg.addColorStop(0.7, '#FFE59A'); sg.addColorStop(1, '#FFC770');
+      ctx.fillStyle = sg;
+      ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  };
+
+  /* Rastro de luz do sol/lua refletido na água. */
+  BridgeView.prototype.drawCelestialReflection = function (hz) {
+    var ctx = this.ctx, st = this.state, w = this.w, h = this.h;
+    var c = this.celestialAt(hz), vis = (1 - st.fogBoost) * (c.light ? 0.5 : 0.38);
+    var col = c.light ? [255, 214, 140] : [200, 214, 245], depth = Math.min(h - hz, h * 0.4);
+    if (depth <= 0 || (!c.light && w < 760)) return;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, hz, w, h - hz); ctx.clip();
+    for (var i = 0; i < 38; i++) {
+      var u = i / 38, y = hz + depth * Math.pow(u, 1.5);
+      var sh = Math.sin(i * 2.7) * 0.5 + 0.5, half = c.r * (0.5 + u * 2.4) * (0.45 + sh * 0.55);
+      var g = ctx.createLinearGradient(c.x - half, 0, c.x + half, 0);
+      g.addColorStop(0, css(col, 0)); g.addColorStop(0.5, css(col, vis * (1 - u) * (0.5 + sh * 0.5))); g.addColorStop(1, css(col, 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(c.x - half, y, half * 2, 1 + u * 2.2);
+    }
+    ctx.restore();
   };
 
   /* Luzes dos checkpoints piscando de forma aleatória e fraca, com reflexo leve na água. */
